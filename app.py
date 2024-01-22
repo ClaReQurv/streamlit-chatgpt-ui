@@ -3,12 +3,12 @@ import streamlit as st
 from streamlit_chat import message
 
 # Setting page title and header
-st.set_page_config(page_title="AVA", page_icon=":robot_face:")
-st.markdown("<h1 style='text-align: center;'>AVA - a totally harmless chatbot 😬</h1>", unsafe_allow_html=True)
+st.set_page_config(page_title="Chat GPT - Pacini", page_icon=":robot_face:")
+st.markdown("<h1 style='text-align: center;'>Pacini - Sistema di esercitazione 😬</h1>", unsafe_allow_html=True)
 
 # Set org ID and API key
-openai.organization = "<YOUR_OPENAI_ORG_ID>"
-openai.api_key = "<YOUR_OPENAI_API_KEY>"
+openai.organization = "org-q6S9TzZc8pZcibeMhjorx33x"
+openai.api_key = "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"
 
 # Initialise session state variables
 if 'generated' not in st.session_state:
@@ -17,7 +17,6 @@ if 'past' not in st.session_state:
     st.session_state['past'] = []
 if 'messages' not in st.session_state:
     st.session_state['messages'] = [
-        {"role": "system", "content": "You are a helpful assistant."}
     ]
 if 'model_name' not in st.session_state:
     st.session_state['model_name'] = []
@@ -28,9 +27,11 @@ if 'total_tokens' not in st.session_state:
 if 'total_cost' not in st.session_state:
     st.session_state['total_cost'] = 0.0
 
+st.session_state['isFirstTime'] = True
+
 # Sidebar - let user choose model, show total cost of current conversation, and let user clear the current conversation
 st.sidebar.title("Sidebar")
-model_name = st.sidebar.radio("Choose a model:", ("GPT-3.5", "GPT-4"))
+model_name = st.sidebar.radio("Choose a model:", ("GPT-3.5", "Do not select"))
 counter_placeholder = st.sidebar.empty()
 counter_placeholder.write(f"Total cost of this conversation: ${st.session_state['total_cost']:.5f}")
 clear_button = st.sidebar.button("Clear Conversation", key="clear")
@@ -39,28 +40,34 @@ clear_button = st.sidebar.button("Clear Conversation", key="clear")
 if model_name == "GPT-3.5":
     model = "gpt-3.5-turbo"
 else:
-    model = "gpt-4"
+    model = "gpt-3.5-turbo"
 
 # reset everything
 if clear_button:
     st.session_state['generated'] = []
     st.session_state['past'] = []
-    st.session_state['messages'] = [
-        {"role": "system", "content": "You are a helpful assistant."}
-    ]
+    st.session_state['messages'] = []
     st.session_state['number_tokens'] = []
     st.session_state['model_name'] = []
     st.session_state['cost'] = []
     st.session_state['total_cost'] = 0.0
     st.session_state['total_tokens'] = []
+    st.session_state['isFirstTime'] = True
     counter_placeholder.write(f"Total cost of this conversation: ${st.session_state['total_cost']:.5f}")
 
 
 # generate a response
-def generate_response(prompt):
-    st.session_state['messages'].append({"role": "user", "content": prompt})
+def generate_response(prompt, system):
+    if st.session_state['isFirstTime']: 
+        st.session_state['messages'].append({"role": "system", "content": system})
+        st.session_state['messages'].append({"role": "user", "content": prompt})
+        st.session_state['isFirstTime'] = True
+    else:
+        st.session_state['messages'].append({"role": "user", "content": prompt})
 
-    completion = openai.ChatCompletion.create(
+    print(st.session_state['messages'])
+
+    completion = openai.chat.completions.create(
         model=model,
         messages=st.session_state['messages']
     )
@@ -81,11 +88,14 @@ container = st.container()
 
 with container:
     with st.form(key='my_form', clear_on_submit=True):
-        user_input = st.text_area("You:", key='input', height=100)
+        print(st.session_state['isFirstTime'])
+        if st.session_state['isFirstTime']:
+            system_input = st.text_area("System:", key='sys_in', height=100)
+        user_input = st.text_area("Template:", key='input', height=100)
         submit_button = st.form_submit_button(label='Send')
 
     if submit_button and user_input:
-        output, total_tokens, prompt_tokens, completion_tokens = generate_response(user_input)
+        output, total_tokens, prompt_tokens, completion_tokens = generate_response(user_input, system_input)
         st.session_state['past'].append(user_input)
         st.session_state['generated'].append(output)
         st.session_state['model_name'].append(model_name)
