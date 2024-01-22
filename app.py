@@ -7,8 +7,8 @@ st.set_page_config(page_title="Chat GPT - Pacini", page_icon=":robot_face:")
 st.markdown("<h1 style='text-align: center;'>Pacini - Sistema di esercitazione 😬</h1>", unsafe_allow_html=True)
 
 # Set org ID and API key
-openai.organization = "org-q6S9TzZc8pZcibeMhjorx33x"
-openai.api_key = "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"
+openai.organization = st.secrets['OPEN_AI_ORG']
+openai.api_key = st.secrets['OPEN_AI_SEC']
 
 # Initialise session state variables
 if 'generated' not in st.session_state:
